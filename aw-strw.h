@@ -26,6 +26,12 @@
 
 #include <sys/types.h>
 
+#if __GNUC__
+# define _strw_format(a,b) __attribute__((format(__printf__,a,b)))
+#else
+# define _strw_format(a,b)
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -40,7 +46,7 @@ struct strwbuf {
 #define strkw(buf,str) strnw((buf), (str), sizeof (str) - 1)
 
 ssize_t strnw(struct strwbuf *buf, char *str, size_t n);
-ssize_t strwf(struct strwbuf *buf, char *fmt, ...);
+ssize_t strwf(struct strwbuf *buf, char *fmt, ...) _strw_format(2, 3);
 
 #ifdef __cplusplus
 } /* extern "C" */
