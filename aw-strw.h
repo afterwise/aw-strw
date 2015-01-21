@@ -39,18 +39,18 @@ extern "C" {
 #endif
 
 struct strwbuf {
-	char *ptr;
+	char *str;
 	size_t size;
 	size_t len;
 };
 
-#define strkw(buf,str) strnw((buf), (str), sizeof (str) - 1)
-
-static _strw_alwaysinline void strwbuf_init(struct strwbuf *buf, char *ptr, size_t size) {
-	buf->ptr = ptr;
+static _strw_alwaysinline void strwbuf_init(struct strwbuf *buf, char *str, size_t size) {
+	buf->str = str;
 	buf->size = size;
 	buf->len = 0;
 }
+
+#define strkw(buf,str) strnw((buf), (str), sizeof (str) - 1)
 
 ssize_t strw(struct strwbuf *buf, char *str);
 ssize_t strnw(struct strwbuf *buf, char *str, size_t n);

@@ -32,8 +32,8 @@ ssize_t strw(struct strwbuf *buf, char *str) {
 
 ssize_t strnw(struct strwbuf *buf, char *str, size_t n) {
 	if (buf->size > buf->len + n) {
-		memcpy(buf->ptr + buf->len, str, n);
-		return buf->ptr[buf->len += n] = 0, n;
+		memcpy(buf->str + buf->len, str, n);
+		return buf->str[buf->len += n] = 0, n;
 	}
 
 	return -1;
@@ -44,7 +44,7 @@ ssize_t strwf(struct strwbuf *buf, char *fmt, ...) {
 	va_list ap;
 
 	va_start(ap, fmt);
-	err = vsnprintf(buf->ptr + buf->len, buf->size - buf->len, fmt, ap);
+	err = vsnprintf(buf->str + buf->len, buf->size - buf->len, fmt, ap);
 	va_end(ap);
 
 	return (err >= 0 && buf->size > buf->len + err) ? buf->len += err, err : -1;
