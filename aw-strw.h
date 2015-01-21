@@ -28,8 +28,10 @@
 
 #if __GNUC__
 # define _strw_format(a,b) __attribute__((format(__printf__,a,b)))
-#else
+# define _strw_alwaysinline inline __attribute__((always_inline))
+#elif _MSC_VER
 # define _strw_format(a,b)
+# define _strw_alwaysinline __forceinline
 #endif
 
 #ifdef __cplusplus
@@ -42,9 +44,15 @@ struct strwbuf {
 	size_t len;
 };
 
-#define strw(buf,str) strnw(buf, str, strlen(str))
 #define strkw(buf,str) strnw((buf), (str), sizeof (str) - 1)
 
+static _strw_alwaysinline void strwbuf_init(struct strwbuf *buf, char *ptr, size_t size) {
+	buf->ptr = ptr;
+	buf->size = size;
+	buf->len = 0;
+}
+
+ssize_t strw(struct strwbuf *buf, char *str);
 ssize_t strnw(struct strwbuf *buf, char *str, size_t n);
 ssize_t strwf(struct strwbuf *buf, char *fmt, ...) _strw_format(2, 3);
 

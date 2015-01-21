@@ -26,6 +26,10 @@
 #include <stdio.h>
 #include <string.h>
 
+ssize_t strw(struct strwbuf *buf, char *str) {
+	return strnw(buf, str, strlen(str));
+}
+
 ssize_t strnw(struct strwbuf *buf, char *str, size_t n) {
 	if (buf->size > buf->len + n) {
 		memcpy(buf->ptr + buf->len, str, n);
