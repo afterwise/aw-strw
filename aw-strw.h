@@ -24,14 +24,18 @@
 #ifndef AW_STRW_H
 #define AW_STRW_H
 
-#include <sys/types.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
 
 #if __GNUC__
 # define _strw_format(a,b) __attribute__((format(__printf__,a,b)))
 # define _strw_alwaysinline inline __attribute__((always_inline))
+# define _strw_unused __attribute__((__unused__))
 #elif _MSC_VER
 # define _strw_format(a,b)
 # define _strw_alwaysinline __forceinline
+# define _strw_unused
 #endif
 
 #ifdef __cplusplus
@@ -50,11 +54,31 @@ static _strw_alwaysinline void strwbuf_init(struct strwbuf *buf, char *str, size
 	buf->len = 0;
 }
 
-#define strkw(buf,str) strnw((buf), (str), sizeof (str) - 1)
+#define strlw(buf,str) strnw((buf), (str), sizeof (str) - 1)
 
-ssize_t strw(struct strwbuf *buf, char *str);
-ssize_t strnw(struct strwbuf *buf, char *str, size_t n);
-ssize_t strwf(struct strwbuf *buf, char *fmt, ...) _strw_format(2, 3);
+static ssize_t strnw(struct strwbuf *buf, char *str, size_t n) _strw_unused;
+static ssize_t strnw(struct strwbuf *buf, char *str, size_t n) {
+	if (buf->size > buf->len + n) {
+		memcpy(buf->str + buf->len, str, n);
+		return buf->str[buf->len += n] = 0, n;
+	}
+	return -1;
+}
+
+static ssize_t strw(struct strwbuf *buf, char *str) _strw_unused;
+static ssize_t strw(struct strwbuf *buf, char *str) {
+	return strnw(buf, str, strlen(str));
+}
+
+static ssize_t strwf(struct strwbuf *buf, char *fmt, ...) _strw_unused _strw_format(2, 3);
+static ssize_t strwf(struct strwbuf *buf, char *fmt, ...) {
+	ssize_t err;
+	va_list ap;
+	va_start(ap, fmt);
+	err = vsnprintf(buf->str + buf->len, buf->size - buf->len, fmt, ap);
+	va_end(ap);
+	return (err >= 0 && buf->size > buf->len + err) ? buf->len += err, err : -1;
+}
 
 #ifdef __cplusplus
 } /* extern "C" */
