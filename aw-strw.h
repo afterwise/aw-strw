@@ -48,7 +48,8 @@ struct strwbuf {
 	size_t len;
 };
 
-static _strw_alwaysinline void strwbuf_init(struct strwbuf *buf, char *str, size_t size) {
+_strw_alwaysinline
+static void strwbuf_init(struct strwbuf *buf, char *str, size_t size) {
 	buf->str = str;
 	buf->size = size;
 	buf->len = 0;
