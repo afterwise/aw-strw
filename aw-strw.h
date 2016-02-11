@@ -1,6 +1,6 @@
 
 /*
-   Copyright (c) 2014 Malte Hildingsson, malte (at) afterwi.se
+   Copyright (c) 2014-2016 Malte Hildingsson, malte (at) afterwi.se
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -29,9 +29,9 @@
 #include <string.h>
 
 #if __GNUC__
-# define _strw_format(a,b) __attribute__((format(__printf__,a,b)))
+# define _strw_format(a,b) __attribute__((format(printf,a,b)))
 # define _strw_alwaysinline inline __attribute__((always_inline))
-# define _strw_unused __attribute__((__unused__))
+# define _strw_unused __attribute__((unused))
 #elif _MSC_VER
 # define _strw_format(a,b)
 # define _strw_alwaysinline __forceinline
@@ -56,7 +56,7 @@ static _strw_alwaysinline void strwbuf_init(struct strwbuf *buf, char *str, size
 
 #define strlw(buf,str) strnw((buf), (str), sizeof (str) - 1)
 
-static ssize_t strnw(struct strwbuf *buf, char *str, size_t n) _strw_unused;
+_strw_unused
 static ssize_t strnw(struct strwbuf *buf, char *str, size_t n) {
 	if (buf->size > buf->len + n) {
 		memcpy(buf->str + buf->len, str, n);
@@ -65,12 +65,12 @@ static ssize_t strnw(struct strwbuf *buf, char *str, size_t n) {
 	return -1;
 }
 
-static ssize_t strw(struct strwbuf *buf, char *str) _strw_unused;
+_strw_unused
 static ssize_t strw(struct strwbuf *buf, char *str) {
 	return strnw(buf, str, strlen(str));
 }
 
-static ssize_t strwf(struct strwbuf *buf, char *fmt, ...) _strw_unused _strw_format(2, 3);
+_strw_unused _strw_format(2, 3)
 static ssize_t strwf(struct strwbuf *buf, char *fmt, ...) {
 	ssize_t err;
 	va_list ap;
