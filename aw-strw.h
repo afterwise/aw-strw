@@ -24,6 +24,7 @@
 #ifndef AW_STRW_H
 #define AW_STRW_H
 
+#include <sys/types.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
