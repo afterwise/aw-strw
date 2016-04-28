@@ -24,6 +24,10 @@
 #ifndef AW_STRW_H
 #define AW_STRW_H
 
+#if !_MSC_VER || _MSC_VER >= 1800
+# include <stdbool.h>
+#endif
+
 #include <sys/types.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -31,11 +35,13 @@
 
 #if __GNUC__
 # define _strw_format(a,b) __attribute__((format(printf,a,b)))
-# define _strw_alwaysinline inline __attribute__((always_inline))
+# define _strw_alwaysinline __attribute__((always_inline))
+# define _strw_malloc __attribute__((malloc))
 # define _strw_unused __attribute__((unused))
 #elif _MSC_VER
 # define _strw_format(a,b)
 # define _strw_alwaysinline __forceinline
+# define _strw_malloc
 # define _strw_unused
 #endif
 
@@ -44,42 +50,86 @@ extern "C" {
 #endif
 
 struct strwbuf {
-	char *str;
+	char *__restrict str;
 	size_t size;
 	size_t len;
 };
 
 _strw_alwaysinline
-static void strwbuf_init(struct strwbuf *buf, char *str, size_t size) {
+static inline void strwbuf_init(struct strwbuf *__restrict buf, char *__restrict str, size_t size) {
 	buf->str = str;
 	buf->size = size;
 	buf->len = 0;
 }
 
-#define strlw(buf,str) strnw((buf), (str), sizeof (str) - 1)
+/* test if there are at least n+1 bytes left in the buffer */
 
 _strw_unused
-static ssize_t strnw(struct strwbuf *buf, char *str, size_t n) {
-	if (buf->size > buf->len + n) {
+static inline bool strwsz(struct strwbuf *__restrict buf, size_t n) {
+	return buf->size > buf->len + n;
+}
+
+/* allocate buffer space, return pointer */
+
+_strw_unused _strw_malloc
+static inline void *strwp(struct strwbuf *__restrict buf, size_t n) {
+	if (strwsz(buf, n))
+		return buf->len += n, buf->str;
+	return NULL;
+}
+
+/* write literal string */
+
+#define strlw(buf,str) strnw((buf), (str), sizeof (str) - 1)
+
+/* write n characters */
+
+_strw_unused
+static inline ssize_t strnw(struct strwbuf *__restrict buf, char *__restrict str, size_t n) {
+	if (strwsz(buf, n)) {
 		memcpy(buf->str + buf->len, str, n);
 		return buf->str[buf->len += n] = 0, n;
 	}
 	return -1;
 }
 
+/* write string */
+
 _strw_unused
-static ssize_t strw(struct strwbuf *buf, char *str) {
+static inline ssize_t strw(struct strwbuf *__restrict buf, char *__restrict str) {
 	return strnw(buf, str, strlen(str));
 }
 
+/* write formatted string */
+
 _strw_unused _strw_format(2, 3)
-static ssize_t strwf(struct strwbuf *buf, char *fmt, ...) {
+static inline ssize_t strwf(struct strwbuf *__restrict buf, char *__restrict fmt, ...) {
 	ssize_t err;
 	va_list ap;
 	va_start(ap, fmt);
 	err = vsnprintf(buf->str + buf->len, buf->size - buf->len, fmt, ap);
 	va_end(ap);
-	return (err >= 0 && buf->size > buf->len + err) ? buf->len += err, err : -1;
+	return (err >= 0 && strwsz(buf, err)) ? buf->len += err, err : -1;
+}
+
+/* assemble (join) string from pieces */
+
+struct strwap {
+	struct { const char *__restrict str; size_t len; } v[0];
+};
+
+_strw_unused
+static inline ssize_t strwa(struct strwbuf *__restrict buf, const struct strwap ap) {
+	size_t n = 0;
+	for (size_t i = 0; ap.v[i].str != NULL; ++i)
+		n += ap.v[i].len;
+	char *__restrict p = strwp(buf, n);
+	if (p != NULL) {
+		for (size_t i = 0; ap.v[i].str != NULL; ++i, p += ap.v[i].len)
+			memcpy(p, ap.v[i].str, ap.v[i].len);
+		return n;
+	}
+	return -1;
 }
 
 #ifdef __cplusplus
