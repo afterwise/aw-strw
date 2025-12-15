@@ -61,7 +61,7 @@ struct strwbuf {
 	size_t len;
 };
 
-_strw_alwaysinline
+_strw_unused _strw_alwaysinline
 static void strwbuf_init(struct strwbuf *__restrict buf, char *__restrict str, size_t size) {
 	buf->str = str;
 	buf->size = size;
