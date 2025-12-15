@@ -1,6 +1,6 @@
 
 /*
-   Copyright (c) 2014-2016 Malte Hildingsson, malte (at) afterwi.se
+   Copyright (c) 2014-2025 Malte Hildingsson, malte (at) afterwi.se
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -49,6 +49,12 @@
 extern "C" {
 #endif
 
+#if defined(_MSC_VER)
+typedef signed __int64 strw_ssize_t;
+#else
+typedef ssize_t strw_ssize_t;
+#endif
+
 struct strwbuf {
 	char *__restrict str;
 	size_t size;
@@ -56,7 +62,7 @@ struct strwbuf {
 };
 
 _strw_alwaysinline
-static inline void strwbuf_init(struct strwbuf *__restrict buf, char *__restrict str, size_t size) {
+static void strwbuf_init(struct strwbuf *__restrict buf, char *__restrict str, size_t size) {
 	buf->str = str;
 	buf->size = size;
 	buf->len = 0;
@@ -72,7 +78,7 @@ static inline bool strwsz(struct strwbuf *__restrict buf, size_t n) {
 /* allocate buffer space, return pointer */
 
 _strw_unused _strw_malloc
-static inline void *strwp(struct strwbuf *__restrict buf, size_t n) {
+static inline char *__restrict strwp(struct strwbuf *__restrict buf, size_t n) {
 	if (strwsz(buf, n))
 		return buf->len += n, buf->str;
 	return NULL;
@@ -85,7 +91,7 @@ static inline void *strwp(struct strwbuf *__restrict buf, size_t n) {
 /* write n characters */
 
 _strw_unused
-static inline ssize_t strnw(struct strwbuf *__restrict buf, char *__restrict str, size_t n) {
+static inline strw_ssize_t strnw(struct strwbuf *__restrict buf, const char *__restrict str, size_t n) {
 	if (strwsz(buf, n)) {
 		memcpy(buf->str + buf->len, str, n);
 		return buf->str[buf->len += n] = 0, n;
@@ -96,15 +102,15 @@ static inline ssize_t strnw(struct strwbuf *__restrict buf, char *__restrict str
 /* write string */
 
 _strw_unused
-static inline ssize_t strw(struct strwbuf *__restrict buf, char *__restrict str) {
+static inline strw_ssize_t strw(struct strwbuf *__restrict buf, const char *__restrict str) {
 	return strnw(buf, str, strlen(str));
 }
 
 /* write formatted string */
 
 _strw_unused _strw_format(2, 3)
-static inline ssize_t strwf(struct strwbuf *__restrict buf, char *__restrict fmt, ...) {
-	ssize_t err;
+static inline strw_ssize_t strwf(struct strwbuf *__restrict buf, const char *__restrict fmt, ...) {
+	strw_ssize_t err;
 	va_list ap;
 	va_start(ap, fmt);
 	err = vsnprintf(buf->str + buf->len, buf->size - buf->len, fmt, ap);
@@ -115,18 +121,19 @@ static inline ssize_t strwf(struct strwbuf *__restrict buf, char *__restrict fmt
 /* assemble (join) string from pieces */
 
 struct strwap {
-	struct { const char *__restrict str; size_t len; } v[0];
+	const char *__restrict str;
+	size_t len;
 };
 
 _strw_unused
-static inline ssize_t strwa(struct strwbuf *__restrict buf, const struct strwap ap) {
+static inline strw_ssize_t strwa(struct strwbuf *__restrict buf, const struct strwap* ap) {
 	size_t n = 0;
-	for (size_t i = 0; ap.v[i].str != NULL; ++i)
-		n += ap.v[i].len;
+	for (size_t i = 0; ap[i].str != NULL; ++i)
+		n += ap[i].len;
 	char *__restrict p = strwp(buf, n);
 	if (p != NULL) {
-		for (size_t i = 0; ap.v[i].str != NULL; ++i, p += ap.v[i].len)
-			memcpy(p, ap.v[i].str, ap.v[i].len);
+		for (size_t i = 0; ap[i].str != NULL; ++i, p += ap[i].len)
+			memcpy(p, ap[i].str, ap[i].len);
 		return n;
 	}
 	return -1;
