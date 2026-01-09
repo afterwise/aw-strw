@@ -33,12 +33,12 @@
 #include <stdio.h>
 #include <string.h>
 
-#if __GNUC__
+#if defined(__GNUC__)
 # define _strw_format(a,b) __attribute__((format(printf,a,b)))
 # define _strw_alwaysinline __attribute__((always_inline))
 # define _strw_malloc __attribute__((malloc))
 # define _strw_unused __attribute__((unused))
-#elif _MSC_VER
+#elif defined(_MSC_VER)
 # define _strw_format(a,b)
 # define _strw_alwaysinline __forceinline
 # define _strw_malloc
