@@ -78,7 +78,7 @@ static inline bool strwsz(struct strwbuf *__restrict buf, size_t n) {
 /* allocate buffer space, return pointer */
 
 _strw_unused _strw_malloc
-static inline char *__restrict strwp(struct strwbuf *__restrict buf, size_t n) {
+static inline char *strwp(struct strwbuf *__restrict buf, size_t n) {
 	if (strwsz(buf, n))
 		return buf->len += n, buf->str;
 	return NULL;
